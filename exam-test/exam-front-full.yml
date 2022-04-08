@@ -25,12 +25,18 @@ spec:
         name: exb-front
         ports:
         - containerPort: 80  
+        resources:
+          limits:
+            cpu: 120m
+          requests:
+            cpu: 100m
 ---
 apiVersion: v1
 kind: Service
 metadata:
   namespace: examboom
   name: exb-front-service
+    
 spec:
   ports:
     - port: 80
@@ -40,7 +46,7 @@ spec:
   selector:
     app.kubernetes.io/name: exb-front
 ---
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   namespace: examboom
@@ -49,16 +55,45 @@ metadata:
     kubernetes.io/ingress.class: alb
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
+    external-dns.alpha.kubernetes.io/hostname: eks.viassh.com
 spec:
   rules:
     - http:
         paths:
-          - path: /api/*
+          - path: /api
+            pathType: Prefix
             backend:
-              serviceName: exb-back-service
-              servicePort: 8080
-    
-          - path: /*
+              service:
+                name: exb-back-service
+                port: 
+                  number: 8080
+          - path: /
+            pathType: Prefix
             backend:
-              serviceName: exb-front-service
-              servicePort: 8080
+              service:
+                name: exb-front-service
+                port: 
+                  number: 80
+
+---
+
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: exb-front-hpa
+  namespace: examboom
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: exb-front-deploy
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 60
+  # metrics:
+  # - type: Resource
+  #   resource:
+  #     name: cpu
+  #     target:
+  #       type: Utilization
+  #       averageUtilization: 20              

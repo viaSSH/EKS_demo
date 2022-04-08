@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   namespace: examboom
   name: exb-back-deploy
+  
 spec:
   selector:
     matchLabels:
@@ -19,6 +20,11 @@ spec:
         name: exb-back
         ports:
         - containerPort: 8080  
+        resources:
+          limits:
+            cpu: 160m
+          requests:
+            cpu: 80m
 ---
 apiVersion: v1
 kind: Service
@@ -33,3 +39,27 @@ spec:
   type: NodePort
   selector:
     app.kubernetes.io/name: exb-back
+
+---
+
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: exb-back-hpa
+  namespace: examboom
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: exb-back-deploy
+  minReplicas: 2
+  maxReplicas: 25
+  targetCPUUtilizationPercentage: 60
+
+  # metrics:
+  # - type: Resource
+  #   resource:
+  #     name: cpu
+  #     target:
+  #       type: Utilization
+  #       averageUtilization: 20
