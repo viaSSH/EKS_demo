@@ -2,6 +2,28 @@ apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
 
 metadata:
-  name: examboom-demo
+  name: eks-exam
   region: ap-northeast-2
+  version: "1.21"
 
+iam:
+  withOIDC: true
+
+vpc:
+  subnets:
+    public:
+      ap-northeast-2a: { id: subnet-0ec6e1005376df048 }
+      ap-northeast-2b: { id: subnet-0609724dd9cda79f0 }
+    private:
+      ap-northeast-2a: { id: subnet-03d9d743dcef08178 }
+      ap-northeast-2b: { id: subnet-0ba17339cf1d99402 }
+
+
+managedNodeGroups:
+  - name: eks-exam-ng
+    instanceType: t3.small
+    desiredCapacity: 3
+    volumeSize: 15
+    ssh:
+      allow: true # will use ~/.ssh/id_rsa.pub as the default ssh key
+      publicKeyName: examboom
